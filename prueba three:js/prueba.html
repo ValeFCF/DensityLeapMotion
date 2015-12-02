@@ -19,9 +19,15 @@
 				padding: 5px 10px;
 				cursor: pointer;
 			}
+
 			button:hover {
 				background-color: rgba(0,255,255,0.5);
 			}
+
+			.dg {
+		      right: auto!important;
+		      left: 20px!important;
+		    }
 			
 			#menu {
 				position: absolute;
@@ -57,7 +63,6 @@
 
 		<div id="topmenu"></div>
 
-
 		<script src="build/three.min.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
@@ -66,7 +71,7 @@
 		<script src="js/Ocean.js"></script>
 		<script src="js/Mirror.js"></script>
 		<script src="js/WaterShader.js"></script>
-
+		<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
 		
 		<script>
 			// Our Javascript will go here.
@@ -78,8 +83,10 @@
 			var height = window.innerHeight
 
 			var huevos = [];
-
 			var lastTime = (new Date()).getTime();
+			var gui = new dat.GUI()
+			var clock = new THREE.Clock(true)
+			var tick = 0;
 			
 			var menu = document.getElementById( "topmenu" );
 
@@ -88,38 +95,6 @@
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
-
-			var geometrySphere = new THREE.SphereGeometry( 1.6, 32, 32 );
-			var materialSphere = new THREE.MeshBasicMaterial( );
-
-			var buttonAddHuevo = document.createElement( 'button' );
-			buttonAddHuevo.innerHTML = "Nuevo huevo";
-			menu.appendChild( buttonAddHuevo );
-			buttonAddHuevo.addEventListener( 'click', function() { 
-										var sphere = new THREE.Mesh( geometrySphere, materialSphere );
-										sphere.position.y = -3.4
-										sphere.position.x = 9
-										huevos.push( sphere );
-										scene.add( sphere );
-										console.log(sphere)
-										// mesh.scale.set(2,2,2)
-														 } );
-
-			var buttonDeleteHuevo = document.createElement( 'button' );
-			buttonDeleteHuevo.innerHTML = "Eliminar huevos";
-			menu.appendChild( buttonDeleteHuevo );
-			buttonDeleteHuevo.addEventListener( 'click', function() {
-											for ( var i = 0; i < huevos.length; i ++ ) {
-												console.log( huevos[i].uuid  )
-												scene.remove( huevos[i] );
-											}
-											huevos = [];
-											console.log(huevos.length)
-														 } );
-
-
-			//var b_ab = document.getElementById( "b_ab" );
-			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
 
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
 			var material =  new THREE.MeshBasicMaterial( { 
@@ -140,30 +115,30 @@
 			circle.rotation.x = 4.7
 			circle.position.y = -5
 			scene.add( circle );
-			
+
 
 			var Water =
 			{
 				Initialize: function () {
 					//this.ms_Camera.position.set(450, 350, 450);
 					
-					var gsize = 512;
-					var res = 1024;
+					var gsize = 4;
+					var res = 8;
 					var gres = res / 2;
 					var origx = -gsize / 2;
 					var origz = -gsize / 2;
 					this.ms_Ocean = new THREE.Ocean(renderer, camera, scene,
 					{
 						USE_HALF_FLOAT : 'half-float',
-						INITIAL_SIZE : 256.0,
+						INITIAL_SIZE : 500.0,
 						INITIAL_WIND : [10.0, 10.0],
-						INITIAL_CHOPPINESS : 1.5,
+						INITIAL_CHOPPINESS : 4.0,
 						CLEAR_COLOR : [1.0, 1.0, 1.0, 0.0],
 						GEOMETRY_ORIGIN : [origx, origz],
-						SUN_DIRECTION : [-1.0, 1.0, 1.0],
-						OCEAN_COLOR: new THREE.Vector3(0.004, 0.016, 0.047),
+						SUN_DIRECTION : [1.0, 1.0, 1.0],
+						OCEAN_COLOR: new THREE.Vector3(0.03, 0.02, 0.05),
 						SKY_COLOR: new THREE.Vector3(3.2, 9.6, 12.8),
-						EXPOSURE : 0.35,
+						EXPOSURE : 0.4,
 						GEOMETRY_RESOLUTION: gres,
 						GEOMETRY_SIZE : gsize,
 						RESOLUTION : res
@@ -204,44 +179,95 @@
 				}
 			};
 
-/*
-			////////////
-			// CUSTOM //
-			////////////
-			
-			this.refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
-			scene.add( refractSphereCamera );
 
-			var fShader = THREE.FresnelShader;
-			
-			var fresnelUniforms = 
-			{
-				"mRefractionRatio": { type: "f", value: 1.02 },
-				"mFresnelBias": 	{ type: "f", value: 0.1 },
-				"mFresnelPower": 	{ type: "f", value: 2.0 },
-				"mFresnelScale": 	{ type: "f", value: 1.0 },
-				"tCube": 			{ type: "t", value: refractSphereCamera.renderTarget } //  textureCube }
+			var Sal = {
+				Initialize: function () {
+					particleSystem = new THREE.GPUParticleSystem({
+				        maxParticles: 2500
+				    });
+
+				    particleSystem.position.y = -2
+				     
+				    scene.add( particleSystem);
+
+				    // options passed during each spawned
+					options = {
+						position: new THREE.Vector3(),
+						positionRandomness: 3,
+						velocity: new THREE.Vector3(),
+						velocityRandomness: 0.0,
+						color: 0xaa88ff,
+						colorRandomness: 0.0,
+						turbulence: 0.0,
+						lifetime: 0.2,
+						size: 0,
+						sizeRandomness: 0.1
+					};
+
+					spawnerOptions = {
+						spawnRate: 15,
+						horizontalSpeed: 0.0,
+						verticalSpeed: 0.0,
+						timeScale: 0.1
+					}
+
+					gui.add(options, "size", 0, 4);
+				},
+
+				Animate: function () {
+					var delta = clock.getDelta() * spawnerOptions.timeScale;
+				    tick += delta;
+
+				    if (tick < 0) tick = 0;
+
+				    if (delta > 0) {
+				    	for (var x = 0; x < spawnerOptions.spawnRate * delta; x++) {
+				          	// Yep, that's really it.  Spawning particles is super cheap, and once you spawn them, the rest of
+				          	// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
+				          	particleSystem.spawnParticle(options);
+				        }
+				    }
+
+				    particleSystem.update(tick);
+				}
 			};
-			
-			// create custom material for the shader
-			var customMaterial = new THREE.ShaderMaterial( 
-			{
-			    uniforms: 		fresnelUniforms,
-				vertexShader:   fShader.vertexShader,
-				fragmentShader: fShader.fragmentShader
-			}   );
-			
-			var sphereGeometry = new THREE.SphereGeometry( 100, 64, 32 );
-			this.sphere = new THREE.Mesh( sphereGeometry, customMaterial );
-			sphere.position.set(0, 50, 100);
-			scene.add(sphere);
-			
-			refractSphereCamera.position = sphere.position;
 
 
-*/
+			var buttonAddHuevo = document.createElement( 'button' );
+			buttonAddHuevo.innerHTML = "Nuevo huevo";
+			menu.appendChild( buttonAddHuevo );
+			buttonAddHuevo.addEventListener( 'click', function() { 
+										var sphere = new THREE.Mesh( 
+														new THREE.SphereGeometry( 1.6, 32, 32 ), 
+														new THREE.MeshBasicMaterial( ) );
+										sphere.position.y = -3.4
+										sphere.position.x = 9
+										huevos.push( sphere );
+										scene.add( sphere );
+										console.log(sphere)
+										// mesh.scale.set(2,2,2)
+														 } );
 
+			var buttonDeleteHuevo = document.createElement( 'button' );
+			buttonDeleteHuevo.innerHTML = "Eliminar huevos";
+			menu.appendChild( buttonDeleteHuevo );
+			buttonDeleteHuevo.addEventListener( 'click', function() {
+											for ( var i = 0; i < huevos.length; i ++ ) {
+												scene.remove( huevos[i] );
+											}
+											huevos = [];
+														 } );
+
+
+			//var b_ab = document.getElementById( "b_ab" );
+			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
 			
+
+//in collision
+//Water.ms_Ocean.size = 5.0
+//				Water.ms_Ocean.changed = true;
+//				console.log( Water.ms_Ocean.size )
+
 
 			controls = new THREE.OrbitControls( camera );
 			controls.enableDamping = true;
@@ -262,11 +288,13 @@
 				controls.update();
 				
 				Water.Update();
+				Sal.Animate();
 
 				renderer.render(scene, camera);
 			};
 
 			Water.Initialize();
+			Sal.Initialize();
 			
 			render();
 
