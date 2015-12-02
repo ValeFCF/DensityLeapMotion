@@ -59,7 +59,6 @@
 
 
 		<script src="build/three.min.js"></script>
-		
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
@@ -79,6 +78,8 @@
 			var height = window.innerHeight
 
 			var huevos = [];
+
+			var lastTime = (new Date()).getTime();
 			
 			var menu = document.getElementById( "topmenu" );
 
@@ -120,9 +121,6 @@
 			//var b_ab = document.getElementById( "b_ab" );
 			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
 
-
-
-
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
 			var material =  new THREE.MeshBasicMaterial( { 
 								color: 0x3794cf, 
@@ -134,7 +132,6 @@
 			var cylinder = new THREE.Mesh( geometryCyl, material ); 
 			scene.add( cylinder );
 
-
 			var material = new THREE.MeshBasicMaterial({ color: 0x3794cf });
 			var radius = 1.7;
 			var segments = 32;
@@ -143,57 +140,13 @@
 			circle.rotation.x = 4.7
 			circle.position.y = -5
 			scene.add( circle );
+			
 
-
-
-/*
-			scene.add( new THREE.AmbientLight( 0x444444 ) );
-
-			var light = new THREE.DirectionalLight( 0xffffbb, 1 );
-			light.position.set( - 1, 1, - 1 );
-			scene.add( light );
-
-
-			waterNormals = new THREE.TextureLoader( 'textures/waternormals.jpg' );
-				waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
-
-				water = new THREE.Water( renderer, camera, scene, {
-					textureWidth: 512,
-					textureHeight: 512,
-					waterNormals: waterNormals,
-					alpha: 	0.7,
-					sunDirection: light.position.clone().normalize(),
-					sunColor: 0xffffff,
-					waterColor: 0x3794cf,
-					distortionScale: 50.0,
-				} );
-
-				var parameters = {
-				width: 1.7,
-				height: 1.7,
-				widthSegments: 25,
-				heightSegments: 25,
-				depth: 1500,
-				param: 4,
-				filterparam: 1
-			};
-
-
-				mirrorMesh = new THREE.Mesh(
-					new THREE.PlaneBufferGeometry( parameters.width * 2.4, parameters.height * 2.4 ),
-					water.material
-				);
-
-				mirrorMesh.add( water );
-				mirrorMesh.rotation.x = - Math.PI * 0.5;
-
-
-				scene.add( mirrorMesh );
-*/
-
-
-/*
-
+			var Water =
+			{
+				Initialize: function () {
+					//this.ms_Camera.position.set(450, 350, 450);
+					
 					var gsize = 512;
 					var res = 1024;
 					var gres = res / 2;
@@ -219,7 +172,37 @@
 					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix = { type: "m4", value: camera.matrixWorldInverse };
 					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition = { type: "v3", value: camera.position };
 					scene.add(this.ms_Ocean.oceanMesh);
-*/
+					
+				},
+
+				Update: function () {
+					var currentTime = new Date().getTime();
+					this.ms_Ocean.deltaTime = (currentTime - lastTime) / 1000 || 0.0;
+					lastTime = currentTime;
+					this.ms_Ocean.render(this.ms_Ocean.deltaTime); //
+					this.ms_Ocean.overrideMaterial = this.ms_Ocean.materialOcean;
+					if (this.ms_Ocean.changed) {
+						this.ms_Ocean.materialOcean.uniforms.u_size.value = this.ms_Ocean.size;
+						this.ms_Ocean.materialOcean.uniforms.u_sunDirection.value.set( this.ms_Ocean.sunDirectionX, this.ms_Ocean.sunDirectionY, this.ms_Ocean.sunDirectionZ );
+						this.ms_Ocean.materialOcean.uniforms.u_exposure.value = this.ms_Ocean.exposure;
+						this.ms_Ocean.changed = false;
+					}
+					this.ms_Ocean.materialOcean.uniforms.u_normalMap.value = this.ms_Ocean.normalMapFramebuffer ;
+					this.ms_Ocean.materialOcean.uniforms.u_displacementMap.value = this.ms_Ocean.displacementMapFramebuffer ;
+					this.ms_Ocean.materialOcean.uniforms.u_projectionMatrix.value = camera.projectionMatrix ;
+					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix.value = camera.matrixWorldInverse ;
+					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition.value = camera.position;
+					this.ms_Ocean.materialOcean.depthTest = true;
+					
+				},
+				// no se usa
+				Resize: function (inWidth, inHeight) {
+					camera.aspect = inWidth / inHeight;
+					camera.updateProjectionMatrix();
+					renderer.setSize(inWidth, inHeight);
+					
+				}
+			};
 
 /*
 			////////////
@@ -276,18 +259,14 @@
 				/*cube.rotation.x += 0.01;
 				cube.rotation.y += 0.01;*/
 
-				//circle.rotation.x += 0.01;
-				//circle.rotation.y += 0.01;
-
-				//console.log(circle.rotation)
-
-				//var time = performance.now() * 0.001;
-				//water.material.uniforms.time.value += 1.0 / 60.0;
 				controls.update();
-				//water.render();
+				
+				Water.Update();
 
 				renderer.render(scene, camera);
 			};
+
+			Water.Initialize();
 			
 			render();
 
