@@ -4,13 +4,71 @@
 		<meta charset=utf-8>
 		<title>My first Three.js app</title>
 		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
+			body {
+				color: #000;
+				font-family:Monospace;
+				font-size:13px;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			button {
+				color: rgb(255,255,255);
+				background: transparent;
+				border: 0px;
+				padding: 5px 10px;
+				cursor: pointer;
+			}
+			button:hover {
+				background-color: rgba(0,255,255,0.5);
+			}
+			
+			#menu {
+				position: absolute;
+				bottom: 20px;
+				width: 100%;
+				text-align: center;
+				padding: 0;
+				margin: 0;
+			}
+
+			#topmenu {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+				width: 100%;
+				text-align: right;
+				padding: 0;
+				margin: 0;
+				z-index: 1;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				text-align:center;
+				padding: 5px;
+			}
+
+
 		</style>
 	</head>
 	<body>
-		<script src="js/three.min.js"></script>
-		<script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+		<div id="topmenu"></div>
+
+
+		<script src="build/three.min.js"></script>
+		
+		<script src="js/libs/stats.min.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/shaders/OceanShaders.js"></script>
+		<script src="js/Ocean.js"></script>
+		<script src="js/Mirror.js"></script>
+		<script src="js/WaterShader.js"></script>
+
+		
 		<script>
 			// Our Javascript will go here.
 
@@ -20,18 +78,50 @@
 			var width = window.innerWidth
 			var height = window.innerHeight
 
+			var huevos = [];
+			
+			var menu = document.getElementById( "topmenu" );
+
 			var camera = new THREE.PerspectiveCamera( 75, width/height, 0.1, 1000 );
 
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-			var geometry = new THREE.SphereGeometry( 1.6, 32, 32 );
-			var material = new THREE.MeshBasicMaterial( );
-			var sphere = new THREE.Mesh( geometry, material );
-			sphere.position.y = -3.4
-			scene.add( sphere );
-			// mesh.scale.set(2,2,2)
+			var geometrySphere = new THREE.SphereGeometry( 1.6, 32, 32 );
+			var materialSphere = new THREE.MeshBasicMaterial( );
+
+			var buttonAddHuevo = document.createElement( 'button' );
+			buttonAddHuevo.innerHTML = "Nuevo huevo";
+			menu.appendChild( buttonAddHuevo );
+			buttonAddHuevo.addEventListener( 'click', function() { 
+										var sphere = new THREE.Mesh( geometrySphere, materialSphere );
+										sphere.position.y = -3.4
+										sphere.position.x = 9
+										huevos.push( sphere );
+										scene.add( sphere );
+										console.log(sphere)
+										// mesh.scale.set(2,2,2)
+														 } );
+
+			var buttonDeleteHuevo = document.createElement( 'button' );
+			buttonDeleteHuevo.innerHTML = "Eliminar huevos";
+			menu.appendChild( buttonDeleteHuevo );
+			buttonDeleteHuevo.addEventListener( 'click', function() {
+											for ( var i = 0; i < huevos.length; i ++ ) {
+												console.log( huevos[i].uuid  )
+												scene.remove( huevos[i] );
+											}
+											huevos = [];
+											console.log(huevos.length)
+														 } );
+
+
+			//var b_ab = document.getElementById( "b_ab" );
+			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
+
+
+
 
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
 			var material =  new THREE.MeshBasicMaterial( { 
@@ -53,10 +143,130 @@
 			circle.rotation.x = 4.7
 			circle.position.y = -5
 			scene.add( circle );
+
+
+
+/*
+			scene.add( new THREE.AmbientLight( 0x444444 ) );
+
+			var light = new THREE.DirectionalLight( 0xffffbb, 1 );
+			light.position.set( - 1, 1, - 1 );
+			scene.add( light );
+
+
+			waterNormals = new THREE.TextureLoader( 'textures/waternormals.jpg' );
+				waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+
+				water = new THREE.Water( renderer, camera, scene, {
+					textureWidth: 512,
+					textureHeight: 512,
+					waterNormals: waterNormals,
+					alpha: 	0.7,
+					sunDirection: light.position.clone().normalize(),
+					sunColor: 0xffffff,
+					waterColor: 0x3794cf,
+					distortionScale: 50.0,
+				} );
+
+				var parameters = {
+				width: 1.7,
+				height: 1.7,
+				widthSegments: 25,
+				heightSegments: 25,
+				depth: 1500,
+				param: 4,
+				filterparam: 1
+			};
+
+
+				mirrorMesh = new THREE.Mesh(
+					new THREE.PlaneBufferGeometry( parameters.width * 2.4, parameters.height * 2.4 ),
+					water.material
+				);
+
+				mirrorMesh.add( water );
+				mirrorMesh.rotation.x = - Math.PI * 0.5;
+
+
+				scene.add( mirrorMesh );
+*/
+
+
+/*
+
+					var gsize = 512;
+					var res = 1024;
+					var gres = res / 2;
+					var origx = -gsize / 2;
+					var origz = -gsize / 2;
+					this.ms_Ocean = new THREE.Ocean(renderer, camera, scene,
+					{
+						USE_HALF_FLOAT : 'half-float',
+						INITIAL_SIZE : 256.0,
+						INITIAL_WIND : [10.0, 10.0],
+						INITIAL_CHOPPINESS : 1.5,
+						CLEAR_COLOR : [1.0, 1.0, 1.0, 0.0],
+						GEOMETRY_ORIGIN : [origx, origz],
+						SUN_DIRECTION : [-1.0, 1.0, 1.0],
+						OCEAN_COLOR: new THREE.Vector3(0.004, 0.016, 0.047),
+						SKY_COLOR: new THREE.Vector3(3.2, 9.6, 12.8),
+						EXPOSURE : 0.35,
+						GEOMETRY_RESOLUTION: gres,
+						GEOMETRY_SIZE : gsize,
+						RESOLUTION : res
+					});
+					this.ms_Ocean.materialOcean.uniforms.u_projectionMatrix = { type: "m4", value: camera.projectionMatrix };
+					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix = { type: "m4", value: camera.matrixWorldInverse };
+					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition = { type: "v3", value: camera.position };
+					scene.add(this.ms_Ocean.oceanMesh);
+*/
+
+/*
+			////////////
+			// CUSTOM //
+			////////////
+			
+			this.refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+			scene.add( refractSphereCamera );
+
+			var fShader = THREE.FresnelShader;
+			
+			var fresnelUniforms = 
+			{
+				"mRefractionRatio": { type: "f", value: 1.02 },
+				"mFresnelBias": 	{ type: "f", value: 0.1 },
+				"mFresnelPower": 	{ type: "f", value: 2.0 },
+				"mFresnelScale": 	{ type: "f", value: 1.0 },
+				"tCube": 			{ type: "t", value: refractSphereCamera.renderTarget } //  textureCube }
+			};
+			
+			// create custom material for the shader
+			var customMaterial = new THREE.ShaderMaterial( 
+			{
+			    uniforms: 		fresnelUniforms,
+				vertexShader:   fShader.vertexShader,
+				fragmentShader: fShader.fragmentShader
+			}   );
+			
+			var sphereGeometry = new THREE.SphereGeometry( 100, 64, 32 );
+			this.sphere = new THREE.Mesh( sphereGeometry, customMaterial );
+			sphere.position.set(0, 50, 100);
+			scene.add(sphere);
+			
+			refractSphereCamera.position = sphere.position;
+
+
+*/
+
 			
 
-
 			controls = new THREE.OrbitControls( camera );
+			controls.enableDamping = true;
+			controls.dampingFactor = 1;
+			controls.enableZoom = true;
+			controls.enablePan = false;
+			controls.maxDistance = 50.0;
+			controls.maxPolarAngle = Math.PI * 0.495;
 
 			camera.position.z = 25;
 
@@ -71,17 +281,15 @@
 
 				//console.log(circle.rotation)
 
+				//var time = performance.now() * 0.001;
+				//water.material.uniforms.time.value += 1.0 / 60.0;
 				controls.update();
+				//water.render();
+
 				renderer.render(scene, camera);
 			};
-
-			controls.enableDamping = true;
-			controls.dampingFactor = 1;
-			controls.enableZoom = true;
-
-			render();
-
 			
+			render();
 
 
 		</script>
