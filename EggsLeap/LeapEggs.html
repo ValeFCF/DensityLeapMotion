@@ -1,0 +1,227 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="assets/main.css" />
+  <title> Eggs </title>
+
+  <script src="//js.leapmotion.com/leap-0.6.4.min.js"></script>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.10.min.js"></script>
+
+  <script src="assets/VREffect.js"></script>
+  <script src="assets/VRControls.js"></script>
+
+  <script src="//js.leapmotion.com/leap-plugins-0.1.9-utils.js"></script>
+
+  <script src="assets/leap.pinchEvent.js"></script>
+  <script type="text/javascript" src="LeapCameraControls.js"></script>
+	<script type="text/javascript" src="LeapObjectControls.js"></script>
+  <style media="screen">
+  body {
+font-family: 'Fauna One', serif;
+font-size: 12px;
+cursor: none;
+background:#000000
+}
+  </style>
+</head>
+<body>
+
+
+
+<!--<div id="output"></div>-->
+
+</body>
+
+<script>
+
+  Leap.loop(function(frame){
+  //  document.getElementById('output').innerHTML = frame.id
+  })
+  .use('transform', {
+    vr: true
+  })
+  .use('boneHand', {
+    targetEl: document.body
+  }).use('pinchEvent');
+//  .use('playback', {recording: 'assets/throw-47fps.json.lz', timeBetweenLoops: 5000});
+
+  Leap.loopController.loopWhileDisconnected = true;
+
+  var width = window.innerWidth
+	var height = window.innerHeight
+
+  var boneHand = Leap.loopController.plugins.boneHand;
+  var rendererLeap = boneHand.renderer;
+  var sceneLeap = boneHand.scene;
+  var cameraLeap = new THREE.PerspectiveCamera( 75, width/height, 0.1, 1000 );
+
+
+
+
+
+
+
+  ///
+
+
+
+
+
+  var vrEffect = new THREE.VREffect(rendererLeap);
+  var vrControls = new THREE.VRControls(cameraLeap);
+
+
+
+
+  var plotter = new LeapDataPlotter();
+  Leap.loopController.on('frame', function(frame){
+
+    var hand = frame.hands[0];
+
+    if (!hand) return;
+
+    plotter.plot('pinchStr', hand.pinchStrength)
+
+  });
+
+
+  spheres = [];
+
+    var sphere = new THREE.Mesh( new THREE.SphereGeometry(0.03, 32, 32),
+      	new THREE.MeshBasicMaterial( )
+    );
+
+
+    spheres.push(sphere);
+    sceneLeap.add(sphere);
+    sphere.visible = false;
+
+    sphere.lastPosition = sphere.position.clone();
+    sphere.pinched = false;
+    sphere.tmpPosition = new THREE.Vector3;
+
+
+    // Glass of water
+
+    var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
+        var material =  new THREE.MeshBasicMaterial( {
+                  color: 0x3794cf,
+                  wireframe: true,
+                  //wireframeLinewidth: 10,
+                  transparent: true,
+                  opacity: 0.3,
+                   } );
+        var cylinder = new THREE.Mesh( geometryCyl, material );
+
+        cylinder.position.x = -.15
+        cylinder.position.y = -2.15
+        cylinder.position.z = -12.1500
+
+
+       sceneLeap.add( cylinder );
+
+
+        var material = new THREE.MeshBasicMaterial({ color: 0x3794cf });
+        var radius = 3;
+        var segments = 16;
+        var circleGeometry = new THREE.CircleGeometry( radius, segments );
+        var circle = new THREE.Mesh( circleGeometry, material );
+        circle.position.x = 12.15
+        circle.position.y = -4.80
+        circle.position.z = -26.1500
+        circle.rotation.z = -12
+        circle.rotation.y = 16
+        circle.rotation.x = -15
+      //  sceneLeap.add( circle );
+
+    ///
+
+
+
+// attache hand and Egg
+
+  Leap.loopController.on('pinch', function(hand){
+    var sphere = spheres.pop();
+    sphere.visible = true;
+    sphere.pinched = true;
+    hand.data('sphere', sphere);
+
+    console.log('pinch: I have a egg');
+
+  }).on('unpinch', function(hand){
+    var sphere = hand.data('sphere');
+
+    console.log('unpinch: I have not a egg');
+
+    if (!sphere) return;
+
+    sphere.pinched = false;
+
+    spheres.push(sphere);
+    //  spheres.push(circle);
+    hand.data('sphere', null);
+
+  });
+
+
+
+  Leap.loopController.on('frameEnd', function(f){});
+
+  Leap.loopController.on('hand', function(hand){
+
+    var sphere = hand.data('sphere');
+
+    if (!sphere) return;
+
+    sphere.pinched = false;
+
+    sphere.lastPosition = sphere.position.clone();
+
+    sphere.position.fromArray(hand.palmPosition);
+
+  });
+
+
+
+  // todo - release new plugins V which has this working
+  // note - that should become postFrame later
+  boneHand.render = function(){
+
+    var sphere;
+
+    for (var i=0; i < spheres.length; i++){
+
+      sphere = spheres[i];
+
+      if (sphere.pinched) continue;
+
+      var newPos = (new THREE.Vector3).subVectors(sphere.position, sphere.lastPosition);
+
+
+      // Add drag
+     newPos.multiplyScalar(0.96);
+
+      // Add gravity
+      newPos.y -= 0.0005;
+
+
+      newPos.add(sphere.position);
+
+
+      sphere.lastPosition = sphere.position.clone();
+      sphere.position.copy(newPos);
+
+    }
+
+
+    plotter.update();
+
+    vrControls.update();
+    vrEffect.render(sceneLeap, cameraLeap);
+  };
+
+
+</script>
+</html>

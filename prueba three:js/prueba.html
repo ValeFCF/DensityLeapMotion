@@ -2,109 +2,121 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first Three.js app</title>
-		<style>
-			body {
-				color: #000;
-				font-family:Monospace;
-				font-size:13px;
-				margin: 0px;
-				overflow: hidden;
-			}
+		<title>Density Practice</title>
 
-			button {
-				color: rgb(255,255,255);
-				background: transparent;
-				border: 0px;
-				padding: 5px 10px;
-				cursor: pointer;
-			}
+			<link rel="stylesheet" type="text/css" href="css/style.css" />
+			<script src="build/three.min.js"></script>
+			<script src="js/libs/stats.min.js"></script>
+			<script src="js/libs/dat.gui.min.js"></script>
+	  	<script src="js/controls/OrbitControls.js"></script>
+			<script src="js/shaders/OceanShaders.js"></script>
+			<script src="js/Ocean.js"></script>
+			<script src="js/Mirror.js"></script>
+			<script src="js/WaterShader.js"></script>
+			<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
 
-			button:hover {
-				background-color: rgba(0,255,255,0.5);
-			}
-
-			.dg {
-		      right: auto!important;
-		      left: 20px!important;
-		    }
-			
-			#menu {
-				position: absolute;
-				bottom: 20px;
-				width: 100%;
-				text-align: center;
-				padding: 0;
-				margin: 0;
-			}
-
-			#topmenu {
-				position: absolute;
-				top: 10px;
-				right: 10px;
-				width: 100%;
-				text-align: right;
-				padding: 0;
-				margin: 0;
-				z-index: 1;
-			}
-
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				text-align:center;
-				padding: 5px;
-			}
+			<script src="assets/VREffect.js"></script>
+			<script src="assets/VRControls.js"></script>
+			<script src="assets/leap.pinchEvent.js"></script>
 
 
-		</style>
+			<script type="text/javascript" src="js/Detector.js"></script>
+			    <script type="text/javascript" src="js/jquery.min.js"></script>
+			  <!--  <script type="text/javascript" src="js/three.min.js"></script>-->
+			    <script type="text/javascript" src="js/leap.min.js"></script>
+			    <script type="text/javascript" src="LeapCameraControls.js"></script>
+			    <script type="text/javascript" src="LeapObjectControls.js"></script>
+
+
+		<!--	<script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js"></script>
+
+			-->
+
+
+
 	</head>
 	<body>
 
 		<div id="topmenu"></div>
 
-		<script src="build/three.min.js"></script>
-		<script src="js/libs/stats.min.js"></script>
-		<script src="js/libs/dat.gui.min.js"></script>
-		<script src="js/controls/OrbitControls.js"></script>
-		<script src="js/shaders/OceanShaders.js"></script>
-		<script src="js/Ocean.js"></script>
-		<script src="js/Mirror.js"></script>
-		<script src="js/WaterShader.js"></script>
-		<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
-		
 		<script>
+
+
+
+
+
 			// Our Javascript will go here.
 
 			// need scene, camera and renderer
+
 			var scene = new THREE.Scene();
 
 			var width = window.innerWidth
 			var height = window.innerHeight
 
-			var huevos = [];
+			var huevos = [] , objectsControls = [];
 			var lastTime = (new Date()).getTime();
 			var gui = new dat.GUI()
 			var clock = new THREE.Clock(true)
 			var tick = 0;
-			
+
+			var projector, light , cameraControls;
+
 			var menu = document.getElementById( "topmenu" );
 
 			var camera = new THREE.PerspectiveCamera( 75, width/height, 0.1, 1000 );
 
-			var renderer = new THREE.WebGLRenderer();
+			var origin = new THREE.Vector3(0, 0, 0);
+		        camera.lookAt(origin);
+						var renderer;
+
+			// leap camera controls
+			cameraControls = new THREE.LeapCameraControls(camera);
+
+			cameraControls.rotateEnabled  = true;
+			cameraControls.rotateSpeed    = 3;
+			cameraControls.rotateHands    = 1;
+			cameraControls.rotateFingers  = [2, 3];
+
+			cameraControls.zoomEnabled    = true;
+			cameraControls.zoomSpeed      = 6;
+			cameraControls.zoomHands      = 1;
+			cameraControls.zoomFingers    = [4, 5];
+			cameraControls.zoomMin        = 50;
+			cameraControls.zoomMax        = 2000;
+
+			cameraControls.panEnabled     = true;
+			cameraControls.panSpeed       = 2;
+			cameraControls.panHands       = 2;
+			cameraControls.panFingers     = [6, 12];
+			cameraControls.panRightHanded = false; // for left-handed person
+
+
+
+
+		  renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
+
+			projector = new THREE.Projector();
+
+			// camera target coordinate system
+			coords1 = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, 75, 0x000000);
+			coords2 = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, 75, 0x000000);
+			coords3 = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, 75, 0x000000);
+
+
+
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
-			var material =  new THREE.MeshBasicMaterial( { 
-								color: 0x3794cf, 
+			var material =  new THREE.MeshBasicMaterial( {
+								color: 0x3794cf,
 								wireframe: true,
-								//wireframeLinewidth: 10, 
-								transparent: true, 
+								//wireframeLinewidth: 10,
+								transparent: true,
 								opacity: 0.2,
-								 } ); 
-			var cylinder = new THREE.Mesh( geometryCyl, material ); 
+								 } );
+			var cylinder = new THREE.Mesh( geometryCyl, material );
 			scene.add( cylinder );
 
 			var material = new THREE.MeshBasicMaterial({ color: 0x3794cf });
@@ -117,11 +129,43 @@
 			scene.add( circle );
 
 
+			var sphere = new THREE.Mesh(
+ 												new THREE.SphereGeometry( 1.6, 32, 32 ),
+ 												new THREE.MeshBasicMaterial( ) );
+ 			sphere.position.y = -2.4
+ 			sphere.position.x = 16
+
+ 			//scene.add( sphere );
+
+			var objectControls = new THREE.LeapObjectControls(camera, sphere);
+
+  objectControls.rotateEnabled  = true;
+  objectControls.rotateSpeed    = 3;
+  objectControls.rotateHands    = 1;
+  objectControls.rotateFingers  = [2, 3];
+
+  objectControls.scaleEnabled   = true;
+  objectControls.scaleSpeed     = 3;
+  objectControls.scaleHands     = 1;
+  objectControls.scaleFingers   = [4, 5];
+
+  objectControls.panEnabled     = true;
+  objectControls.panSpeed       = 3;
+  objectControls.panHands       = 2;
+  objectControls.panFingers     = [6, 12];
+  objectControls.panRightHanded = false; // for left-handed person
+
+ scene.add(sphere);
+  huevos.push(sphere);
+  objectsControls.push(objectControls);
+
+
+
 			var Water =
 			{
 				Initialize: function () {
 					//this.ms_Camera.position.set(450, 350, 450);
-					
+
 					var gsize = 4;
 					var res = 8;
 					var gres = res / 2;
@@ -147,7 +191,7 @@
 					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix = { type: "m4", value: camera.matrixWorldInverse };
 					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition = { type: "v3", value: camera.position };
 					scene.add(this.ms_Ocean.oceanMesh);
-					
+
 				},
 
 				Update: function () {
@@ -168,26 +212,26 @@
 					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix.value = camera.matrixWorldInverse ;
 					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition.value = camera.position;
 					this.ms_Ocean.materialOcean.depthTest = true;
-					
+
 				},
 				// no se usa
 				Resize: function (inWidth, inHeight) {
 					camera.aspect = inWidth / inHeight;
 					camera.updateProjectionMatrix();
 					renderer.setSize(inWidth, inHeight);
-					
+
 				}
 			};
 
 
-			var Sal = {
+			var salt = {
 				Initialize: function () {
 					particleSystem = new THREE.GPUParticleSystem({
-				        maxParticles: 2500
+				        maxParticles: 3500
 				    });
 
 				    particleSystem.position.y = -2
-				     
+
 				    scene.add( particleSystem);
 
 				    // options passed during each spawned
@@ -196,7 +240,7 @@
 						positionRandomness: 3,
 						velocity: new THREE.Vector3(),
 						velocityRandomness: 0.0,
-						color: 0xaa88ff,
+						color: 0xffffff,
 						colorRandomness: 0.0,
 						turbulence: 0.0,
 						lifetime: 0.2,
@@ -233,35 +277,46 @@
 			};
 
 
-			var buttonAddHuevo = document.createElement( 'button' );
-			buttonAddHuevo.innerHTML = "Nuevo huevo";
-			menu.appendChild( buttonAddHuevo );
-			buttonAddHuevo.addEventListener( 'click', function() { 
-										var sphere = new THREE.Mesh( 
-														new THREE.SphereGeometry( 1.6, 32, 32 ), 
-														new THREE.MeshBasicMaterial( ) );
-										sphere.position.y = -3.4
-										sphere.position.x = 9
-										huevos.push( sphere );
-										scene.add( sphere );
-										console.log(sphere)
-										// mesh.scale.set(2,2,2)
+			var btnAddEggs = document.createElement( 'button' );
+			btnAddEggs.innerHTML = "Nuevo huevo";
+			menu.appendChild( btnAddEggs );
+			btnAddEggs.addEventListener( 'click', function() {
+																	addEggs();
 														 } );
 
-			var buttonDeleteHuevo = document.createElement( 'button' );
-			buttonDeleteHuevo.innerHTML = "Eliminar huevos";
-			menu.appendChild( buttonDeleteHuevo );
-			buttonDeleteHuevo.addEventListener( 'click', function() {
-											for ( var i = 0; i < huevos.length; i ++ ) {
-												scene.remove( huevos[i] );
-											}
-											huevos = [];
+			var btnRemoveEggs = document.createElement( 'button' );
+			btnRemoveEggs.innerHTML = "Eliminar huevos";
+			menu.appendChild( btnRemoveEggs );
+			btnRemoveEggs.addEventListener( 'click', function() {
+									                removeEggs();
 														 } );
 
+
+
+     function addEggs(){
+			 var sphere = new THREE.Mesh(
+				 									new THREE.SphereGeometry( 1.6, 32, 32 ),
+													new THREE.MeshBasicMaterial( ) );
+				sphere.position.y = -3.4
+				sphere.position.x = 9
+				huevos.push( sphere );
+				scene.add( sphere );
+
+
+				//mesh.scale.set(2,2,2)
+		 }
+
+
+     function removeEggs(){
+			 for ( var i = 0; i < huevos.length; i ++ ) {
+					scene.remove( huevos[i] );
+				}
+				huevos = [];
+		 }
 
 			//var b_ab = document.getElementById( "b_ab" );
 			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
-			
+
 
 //in collision
 //Water.ms_Ocean.size = 5.0
@@ -279,6 +334,7 @@
 
 			camera.position.z = 25;
 
+
 			var render = function () {
 				requestAnimationFrame( render ); //loop
 
@@ -286,17 +342,18 @@
 				cube.rotation.y += 0.01;*/
 
 				controls.update();
-				
+
 				Water.Update();
-				Sal.Animate();
+				salt.Animate();
 
 				renderer.render(scene, camera);
 			};
 
 			Water.Initialize();
-			Sal.Initialize();
-			
+			salt.Initialize();
+
 			render();
+
 
 
 		</script>
