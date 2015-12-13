@@ -28,7 +28,7 @@
 		      right: auto!important;
 		      left: 20px!important;
 		    }
-			
+
 			#menu {
 				position: absolute;
 				bottom: 20px;
@@ -72,7 +72,7 @@
 		<script src="js/Mirror.js"></script>
 		<script src="js/WaterShader.js"></script>
 		<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
-		
+
 		<script>
 			// Our Javascript will go here.
 
@@ -82,12 +82,16 @@
 			var width = window.innerWidth
 			var height = window.innerHeight
 
-			var huevos = [];
 			var lastTime = (new Date()).getTime();
 			var gui = new dat.GUI()
 			var clock = new THREE.Clock(true)
 			var tick = 0;
-			
+
+			var sphere = null
+			var stateOfHuevo = 0
+			var rebote = 1
+			var cuantaSal
+
 			var menu = document.getElementById( "topmenu" );
 
 			var camera = new THREE.PerspectiveCamera( 75, width/height, 0.1, 1000 );
@@ -97,14 +101,14 @@
 			document.body.appendChild( renderer.domElement );
 
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
-			var material =  new THREE.MeshBasicMaterial( { 
-								color: 0x3794cf, 
+			var material =  new THREE.MeshBasicMaterial( {
+								color: 0x3794cf,
 								wireframe: true,
-								//wireframeLinewidth: 10, 
-								transparent: true, 
+								//wireframeLinewidth: 10,
+								transparent: true,
 								opacity: 0.2,
-								 } ); 
-			var cylinder = new THREE.Mesh( geometryCyl, material ); 
+								 } );
+			var cylinder = new THREE.Mesh( geometryCyl, material );
 			scene.add( cylinder );
 
 			var material = new THREE.MeshBasicMaterial({ color: 0x3794cf });
@@ -121,7 +125,7 @@
 			{
 				Initialize: function () {
 					//this.ms_Camera.position.set(450, 350, 450);
-					
+
 					var gsize = 4;
 					var res = 8;
 					var gres = res / 2;
@@ -147,7 +151,7 @@
 					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix = { type: "m4", value: camera.matrixWorldInverse };
 					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition = { type: "v3", value: camera.position };
 					scene.add(this.ms_Ocean.oceanMesh);
-					
+
 				},
 
 				Update: function () {
@@ -168,14 +172,14 @@
 					this.ms_Ocean.materialOcean.uniforms.u_viewMatrix.value = camera.matrixWorldInverse ;
 					this.ms_Ocean.materialOcean.uniforms.u_cameraPosition.value = camera.position;
 					this.ms_Ocean.materialOcean.depthTest = true;
-					
+
 				},
 				// no se usa
 				Resize: function (inWidth, inHeight) {
 					camera.aspect = inWidth / inHeight;
 					camera.updateProjectionMatrix();
 					renderer.setSize(inWidth, inHeight);
-					
+
 				}
 			};
 
@@ -187,7 +191,7 @@
 				    });
 
 				    particleSystem.position.y = -2
-				     
+
 				    scene.add( particleSystem);
 
 				    // options passed during each spawned
@@ -225,6 +229,8 @@
 				          	// Yep, that's really it.  Spawning particles is super cheap, and once you spawn them, the rest of
 				          	// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
 				          	particleSystem.spawnParticle(options);
+
+										cuantaSal = options.size
 				        }
 				    }
 
@@ -236,38 +242,35 @@
 			var buttonAddHuevo = document.createElement( 'button' );
 			buttonAddHuevo.innerHTML = "Nuevo huevo";
 			menu.appendChild( buttonAddHuevo );
-			buttonAddHuevo.addEventListener( 'click', function() { 
-										var sphere = new THREE.Mesh( 
-														new THREE.SphereGeometry( 1.6, 32, 32 ), 
-														new THREE.MeshBasicMaterial( ) );
-										sphere.position.y = -3.4
-										sphere.position.x = 9
-										huevos.push( sphere );
-										scene.add( sphere );
-										console.log(sphere)
-										// mesh.scale.set(2,2,2)
+			buttonAddHuevo.addEventListener( 'click', function() {
+										if (sphere == null) {
+											sphere = new THREE.Mesh(
+															new THREE.SphereGeometry( 1.6, 32, 32 ),
+															new THREE.MeshBasicMaterial( ) );
+											sphere.position.y = 3.4
+											sphere.position.x  //9
+											scene.add( sphere );
+											stateOfHuevo = 1;
+											console.log(sphere)
+											// mesh.scale.set(2,2,2)
+										}
 														 } );
 
 			var buttonDeleteHuevo = document.createElement( 'button' );
-			buttonDeleteHuevo.innerHTML = "Eliminar huevos";
+			buttonDeleteHuevo.innerHTML = "Eliminar huevo";
 			menu.appendChild( buttonDeleteHuevo );
 			buttonDeleteHuevo.addEventListener( 'click', function() {
-											for ( var i = 0; i < huevos.length; i ++ ) {
-												scene.remove( huevos[i] );
+											if (sphere != null) {
+												scene.remove( sphere );
+												sphere = null
+												Water.ms_Ocean.size = 500.0
+												Water.ms_Ocean.changed = true;
 											}
-											huevos = [];
 														 } );
 
 
 			//var b_ab = document.getElementById( "b_ab" );
 			//b_ab.addEventListener( 'click', function() { visualizationType = 2; showAtomsBonds() } );
-			
-
-//in collision
-//Water.ms_Ocean.size = 5.0
-//				Water.ms_Ocean.changed = true;
-//				console.log( Water.ms_Ocean.size )
-
 
 			controls = new THREE.OrbitControls( camera );
 			controls.enableDamping = true;
@@ -286,19 +289,68 @@
 				cube.rotation.y += 0.01;*/
 
 				controls.update();
-				
+
 				Water.Update();
 				Sal.Animate();
+
+				if (sphere != null){
+					moveHuevo(stateOfHuevo);
+					console.log(sphere.position.y);
+
+					if (sphere.position.y < 0.2 ) {
+						Water.ms_Ocean.size = 5.0
+						Water.ms_Ocean.changed = true;
+					}
+
+					if (cuantaSal >= 2){
+						stateOfHuevo = 2
+					}
+
+				}
 
 				renderer.render(scene, camera);
 			};
 
 			Water.Initialize();
 			Sal.Initialize();
-			
+
 			render();
 
 
 		</script>
+
+		<script type="text/javascript">
+
+			function moveHuevo(argument) {
+				// body...
+				switch(argument) {
+				    case 1:
+				        if (sphere.position.y > -3.4) {
+				        	sphere.position.y = sphere.position.y - 0.1
+				        }
+				        break;
+				    case 2:
+
+								if (rebote == 1 && sphere.position.y > -3){
+									sphere.position.y = sphere.position.y - 0.1;
+									if (sphere.position.y <= -3){
+										rebote = 2
+									}
+								}else if (rebote == 2 && sphere.position.y < 0.3){
+									sphere.position.y = sphere.position.y + 0.1
+									if (sphere.position.y >= 0.3){
+										rebote = 1
+										stateOfHuevo = 0
+									}
+								}
+				        break;
+				    case 3:
+								//code block
+								break;
+				}
+			}
+
+		</script>
+
 	</body>
 </html>
