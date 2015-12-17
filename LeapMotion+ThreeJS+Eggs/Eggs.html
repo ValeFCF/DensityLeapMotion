@@ -10,13 +10,10 @@
 		<div id="topmenu"></div>
 
 		<script src="build/three.min.js"></script>
-		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/shaders/OceanShaders.js"></script>
 		<script src="js/Ocean.js"></script>
-		<script src="js/Mirror.js"></script>
-		<script src="js/WaterShader.js"></script>
 		<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
 
 		<script src="http://js.leapmotion.com/leap-0.6.4.min.js"></script>
@@ -50,7 +47,7 @@
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-
+			// Leap Motion
 
 			Leap.loop(function(frame){
 			  //  document.getElementById('output').innerHTML = frame.id
@@ -101,9 +98,7 @@
 
 		  });
 
-
-
-
+			// Leap Motion *****
 
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
 			var material =  new THREE.MeshBasicMaterial( {
