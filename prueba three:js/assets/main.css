@@ -1,0 +1,42 @@
+canvas.leap-boneHand {
+  top: 10px;
+  left: 0px;
+  position: absolute;
+}
+
+body {
+  color: #000;
+  font-family:Monospace;
+  font-size:13px;
+  margin: 0px;
+  overflow: hidden;
+}
+
+button {
+  color: rgb(255,255,255);
+  background: transparent;
+  border: 0px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: rgba(0,255,255,0.5);
+}
+
+.dg {
+    right: auto!important;
+    left: 20px!important;
+    position: absolute;
+  }
+
+#topmenu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 100%;
+  text-align: right;
+  padding: 0;
+  margin: 0;
+  z-index: 1;
+}

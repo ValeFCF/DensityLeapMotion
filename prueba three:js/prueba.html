@@ -2,62 +2,8 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first Three.js app</title>
-		<style>
-			body {
-				color: #000;
-				font-family:Monospace;
-				font-size:13px;
-				margin: 0px;
-				overflow: hidden;
-			}
-
-			button {
-				color: rgb(255,255,255);
-				background: transparent;
-				border: 0px;
-				padding: 5px 10px;
-				cursor: pointer;
-			}
-
-			button:hover {
-				background-color: rgba(0,255,255,0.5);
-			}
-
-			.dg {
-		      right: auto!important;
-		      left: 20px!important;
-		    }
-
-			#menu {
-				position: absolute;
-				bottom: 20px;
-				width: 100%;
-				text-align: center;
-				padding: 0;
-				margin: 0;
-			}
-
-			#topmenu {
-				position: absolute;
-				top: 10px;
-				right: 10px;
-				width: 100%;
-				text-align: right;
-				padding: 0;
-				margin: 0;
-				z-index: 1;
-			}
-
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				text-align:center;
-				padding: 5px;
-			}
-
-
-		</style>
+		<link rel="stylesheet" type="text/css" href="assets/main.css" />
+	  <title> Eggs </title>
 	</head>
 	<body>
 
@@ -72,6 +18,10 @@
 		<script src="js/Mirror.js"></script>
 		<script src="js/WaterShader.js"></script>
 		<script src="./js/GPUParticleSystem.js" charset="utf-8"></script>
+
+		<script src="http://js.leapmotion.com/leap-0.6.4.min.js"></script>
+		<script src="http://js.leapmotion.com/leap-plugins-0.1.10.min.js"></script>
+		<script src="assets/leap.pinchEvent.js"></script>
 
 		<script>
 			// Our Javascript will go here.
@@ -92,13 +42,68 @@
 			var rebote = 1
 			var cuantaSal
 
-			var menu = document.getElementById( "topmenu" );
+			var topmenu = document.getElementById( "topmenu" );
 
 			var camera = new THREE.PerspectiveCamera( 75, width/height, 0.1, 1000 );
 
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
+
+
+
+			Leap.loop(function(frame){
+			  //  document.getElementById('output').innerHTML = frame.id
+		  })
+		  .use('transform', {
+		    vr: true
+		  })
+		  .use('boneHand', {
+		    targetEl: document.body
+		  })
+			.use('pinchEvent');
+
+			Leap.loopController.loopWhileDisconnected = true;
+
+
+			Leap.loopController.on('pinch', function(hand){
+		    console.log('pinch: I have a egg');
+
+				if (sphere == null) {
+					sphere = new THREE.Mesh(
+									new THREE.SphereGeometry( 1.6, 32, 32 ),
+									new THREE.MeshBasicMaterial( ) );
+					sphere.position.y = 3.4
+					sphere.position.x //9
+					scene.add( sphere );
+					sphere.visible = false;
+					//hand.data('sphere', sphere);
+					stateOfHuevo = 0;
+					console.log(sphere)
+					// mesh.scale.set(2,2,2)
+				}
+
+		  }).on('unpinch', function(hand){
+		    /*var sphere = hand.data('sphere');*/
+
+				if (sphere != null) {
+					sphere.visible = true;
+					stateOfHuevo = 1;
+					console.log('unpinch: I have not a egg');
+				}
+				//hand.data('sphere', null);
+
+		  });
+
+			Leap.loopController.on('frameEnd', function(f){});
+
+		  Leap.loopController.on('hand', function(hand){
+
+		  });
+
+
+
+
 
 			var geometryCyl = new THREE.CylinderGeometry(3, 1.7, 10, 20, 20, true );
 			var material =  new THREE.MeshBasicMaterial( {
@@ -241,7 +246,7 @@
 
 			var buttonAddHuevo = document.createElement( 'button' );
 			buttonAddHuevo.innerHTML = "Nuevo huevo";
-			menu.appendChild( buttonAddHuevo );
+			topmenu.appendChild( buttonAddHuevo );
 			buttonAddHuevo.addEventListener( 'click', function() {
 										if (sphere == null) {
 											sphere = new THREE.Mesh(
@@ -258,7 +263,7 @@
 
 			var buttonDeleteHuevo = document.createElement( 'button' );
 			buttonDeleteHuevo.innerHTML = "Eliminar huevo";
-			menu.appendChild( buttonDeleteHuevo );
+			topmenu.appendChild( buttonDeleteHuevo );
 			buttonDeleteHuevo.addEventListener( 'click', function() {
 											if (sphere != null) {
 												scene.remove( sphere );
@@ -295,7 +300,7 @@
 
 				if (sphere != null){
 					moveHuevo(stateOfHuevo);
-					console.log(sphere.position.y);
+					//console.log(sphere.position.y);
 
 					if (sphere.position.y < 0.2 ) {
 						Water.ms_Ocean.size = 5.0
